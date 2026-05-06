@@ -16,7 +16,6 @@ async function gitlabRequest(endpoint: string, options: RequestInit = {}) {
   const headers = {
     'Content-Type': 'application/json',
     'PRIVATE-TOKEN': cleanToken,
-    'Authorization': `Bearer ${cleanToken}`,
     ...options.headers,
   };
 
@@ -70,10 +69,9 @@ export async function testConnection(url: string, token: string) {
   const baseUrl = cleanUrl + '/api/v4';
   let response;
   try {
-    response = await fetch(`${baseUrl}/version`, {
+    response = await fetch(`${baseUrl}/user`, {
       headers: {
-        'PRIVATE-TOKEN': cleanToken,
-        'Authorization': `Bearer ${cleanToken}`
+        'PRIVATE-TOKEN': cleanToken
       }
     });
   } catch (err: any) {
