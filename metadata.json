@@ -1,0 +1,6 @@
+{
+  "name": "GitLab Dashboard",
+  "description": "Dashboard for managing GitLab issues, projects, and users across multiple instances.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
