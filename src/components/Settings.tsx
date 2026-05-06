@@ -1,24 +1,37 @@
 import React, { useState } from 'react';
 import { useStore, Role } from '../store/useStore';
+import { testConnection } from '../services/gitlab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Server, Users, Trash2, Key, Link2, UserPlus } from 'lucide-react';
+import { Server, Users, Trash2, Key, Link2, UserPlus, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Settings() {
   const { instances, addInstance, removeInstance, setActiveInstance, users, addUser, updateUserRole, currentUser, setCurrentUser } = useStore();
 
   const [newInstance, setNewInstance] = useState({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
   const [newUser, setNewUser] = useState({ name: '', role: 'viewer' as Role });
+  
+  const [testError, setTestError] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
 
-  const handleAddInstance = (e: React.FormEvent) => {
+  const handleAddInstance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newInstance.name && newInstance.url && newInstance.token) {
-      addInstance(newInstance);
-      setNewInstance({ name: '', url: '', token: '' });
+      setIsTesting(true);
+      setTestError(null);
+      try {
+        await testConnection(newInstance.url, newInstance.token);
+        addInstance(newInstance);
+        setNewInstance({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
+      } catch (err: any) {
+        setTestError(err.message || 'Failed to connect');
+      } finally {
+        setIsTesting(false);
+      }
     }
   };
 
@@ -82,6 +95,14 @@ export default function Settings() {
                 <Key className="w-4 h-4" />
                 Add New GitLab Instance
               </h3>
+              
+              {testError && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                  <div className="text-sm text-red-300/90 whitespace-pre-wrap">{testError}</div>
+                </div>
+              )}
+              
               <form onSubmit={handleAddInstance} className="grid sm:grid-cols-2 gap-4 items-end">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-xs text-slate-400">Alias</Label>
@@ -97,7 +118,10 @@ export default function Settings() {
                   <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">Requires `api` or `read_api` scope.</p>
                 </div>
                 <div className="sm:col-span-2 flex justify-end mt-2">
-                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6">Add Instance</Button>
+                  <Button type="submit" disabled={isTesting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6">
+                    {isTesting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Add Instance
+                  </Button>
                 </div>
               </form>
             </div>

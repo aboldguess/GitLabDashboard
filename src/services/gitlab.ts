@@ -62,4 +62,30 @@ export async function fetchVersion() {
   return gitlabRequest('/version');
 }
 
+export async function testConnection(url: string, token: string) {
+  const baseUrl = url.replace(/\/$/, '') + '/api/v4';
+  let response;
+  try {
+    response = await fetch(`${baseUrl}/user`, {
+      headers: {
+        'PRIVATE-TOKEN': token
+      }
+    });
+  } catch (err: any) {
+    throw new Error(`Network Error: Ensure the GitLab server is running at ${url} and is reachable. Note: If it's a local address (like http://gitlab.local), ensure you access this app from the same network, and that CORS is configured correctly on the GitLab server if required. Error details: ${err.message}`);
+  }
 
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(`Unauthorized (401): The token is invalid or expired. Please generate a new token with 'read_api' or 'api' scope in your User Settings.`);
+    }
+    let errorText;
+    try {
+      errorText = await response.text();
+    } catch(e) {
+      errorText = "Unknown error";
+    }
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  return response.json();
+}
