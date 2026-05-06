@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { LayoutDashboard, Settings as SettingsIcon, FolderGit2, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { LayoutDashboard, Settings as SettingsIcon, FolderGit2, Search, HelpCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface SidebarProps {
@@ -15,6 +15,7 @@ export default function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projects', icon: FolderGit2 },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
+    { id: 'help', label: 'Help', icon: HelpCircle },
   ];
 
   return (

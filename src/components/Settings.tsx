@@ -11,7 +11,7 @@ import { Server, Users, Trash2, Key, Link2, UserPlus } from 'lucide-react';
 export default function Settings() {
   const { instances, addInstance, removeInstance, setActiveInstance, users, addUser, updateUserRole, currentUser, setCurrentUser } = useStore();
 
-  const [newInstance, setNewInstance] = useState({ name: '', url: '', token: '' });
+  const [newInstance, setNewInstance] = useState({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
   const [newUser, setNewUser] = useState({ name: '', role: 'viewer' as Role });
 
   const handleAddInstance = (e: React.FormEvent) => {

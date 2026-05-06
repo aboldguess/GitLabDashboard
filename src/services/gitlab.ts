@@ -58,3 +58,8 @@ export async function searchIssues(query: string) {
   return gitlabRequest(`/issues?scope=all&search=${encodeURIComponent(query)}`);
 }
 
+export async function fetchVersion() {
+  return gitlabRequest('/version');
+}
+
+
