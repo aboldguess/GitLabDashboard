@@ -4,7 +4,8 @@ async function gitlabRequest(endpoint: string, options: RequestInit = {}) {
   const client = useStore.getState().getGitlabClient();
   if (!client) throw new Error('No active GitLab connection');
 
-  const baseUrl = client.url.replace(/\/$/, '') + '/api/v4';
+  const baseUrl = client.url.trim().replace(/\/$/, '') + '/api/v4';
+  const cleanToken = client.token.trim();
   
   // Clean endpoint ensuring a leading slash
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -14,7 +15,8 @@ async function gitlabRequest(endpoint: string, options: RequestInit = {}) {
 
   const headers = {
     'Content-Type': 'application/json',
-    'PRIVATE-TOKEN': client.token,
+    'PRIVATE-TOKEN': cleanToken,
+    'Authorization': `Bearer ${cleanToken}`,
     ...options.headers,
   };
 
@@ -63,21 +65,27 @@ export async function fetchVersion() {
 }
 
 export async function testConnection(url: string, token: string) {
-  const baseUrl = url.replace(/\/$/, '') + '/api/v4';
+  const cleanUrl = url.trim().replace(/\/$/, '');
+  const cleanToken = token.trim();
+  const baseUrl = cleanUrl + '/api/v4';
   let response;
   try {
-    response = await fetch(`${baseUrl}/user`, {
+    response = await fetch(`${baseUrl}/version`, {
       headers: {
-        'PRIVATE-TOKEN': token
+        'PRIVATE-TOKEN': cleanToken,
+        'Authorization': `Bearer ${cleanToken}`
       }
     });
   } catch (err: any) {
-    throw new Error(`Network Error: Ensure the GitLab server is running at ${url} and is reachable. Note: If it's a local address (like http://gitlab.local), ensure you access this app from the same network, and that CORS is configured correctly on the GitLab server if required. Error details: ${err.message}`);
+    throw new Error(`Network Error: Ensure the GitLab server is running at ${cleanUrl} and is reachable. Note: If it's a local address (like http://gitlab.local), ensure you access this app from the same network, and that CORS is configured correctly on the GitLab server if required. Error details: ${err.message}`);
   }
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error(`Unauthorized (401): The token is invalid or expired. Please generate a new token with 'read_api' or 'api' scope in your User Settings.`);
+      throw new Error(`Unauthorized (401): The token was rejected by GitLab. 
+1. Check that you copied the whole token (e.g. glpat-...).
+2. If your server redirects HTTP to HTTPS, ensure your Base URL is 'https://' - otherwise the browser may strip the token during the redirect.
+3. Ensure the token hasn't been revoked.`);
     }
     let errorText;
     try {
