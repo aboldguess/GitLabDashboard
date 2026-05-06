@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore, Role } from '../store/useStore';
-import { testConnection } from '../services/gitlab';
+import { testConnection, probeGitlabUrl } from '../services/gitlab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Server, Users, Trash2, Key, Link2, UserPlus, Loader2, AlertCircle } from 'lucide-react';
+import { Server, Users, Trash2, Key, Link2, UserPlus, Loader2, AlertCircle, Eye, EyeOff, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 
 export default function Settings() {
   const { instances, addInstance, removeInstance, setActiveInstance, users, addUser, updateUserRole, currentUser, setCurrentUser } = useStore();
@@ -17,33 +17,35 @@ export default function Settings() {
   
   const [testError, setTestError] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [forceAddEnabled, setForceAddEnabled] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const [urlProbe, setUrlProbe] = useState<{status: 'green'|'amber'|'red'|'idle', message: string}>({status: 'idle', message: ''});
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (newInstance.url.length > 5) {
+        const probe = await probeGitlabUrl(newInstance.url);
+        setUrlProbe(probe);
+      } else {
+        setUrlProbe({status: 'idle', message: ''});
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [newInstance.url]);
 
   const handleAddInstance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newInstance.name && newInstance.url && newInstance.token) {
       setIsTesting(true);
       setTestError(null);
-      setForceAddEnabled(false);
       try {
         await testConnection(newInstance.url, newInstance.token);
         addInstance(newInstance);
         setNewInstance({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
       } catch (err: any) {
         setTestError(err.message || 'Failed to connect');
-        setForceAddEnabled(true);
       } finally {
         setIsTesting(false);
       }
-    }
-  };
-
-  const handleForceAdd = () => {
-    if (newInstance.name && newInstance.url && newInstance.token) {
-      addInstance(newInstance);
-      setNewInstance({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
-      setTestError(null);
-      setForceAddEnabled(false);
     }
   };
 
@@ -109,16 +111,9 @@ export default function Settings() {
               </h3>
               
               {testError && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-                    <div className="text-sm text-red-300/90 whitespace-pre-wrap flex-1">{testError}</div>
-                  </div>
-                  {forceAddEnabled && (
-                    <Button type="button" onClick={handleForceAdd} variant="outline" className="self-end bg-red-500/20 border-red-500/30 text-red-200 hover:bg-red-500/30 hover:text-white mt-2 font-semibold">
-                      Skip Test & Add Instance Anyway
-                    </Button>
-                  )}
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                  <div className="text-sm text-red-300/90 whitespace-pre-wrap">{testError}</div>
                 </div>
               )}
               
@@ -127,14 +122,34 @@ export default function Settings() {
                   <Label htmlFor="name" className="text-xs text-slate-400">Alias</Label>
                   <Input id="name" placeholder="e.g. Work GitLab, GitLab.com" value={newInstance.name} onChange={e => setNewInstance({...newInstance, name: e.target.value})} required className="bg-slate-800 border-slate-700 focus-visible:ring-indigo-500/50 h-10" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label htmlFor="url" className="text-xs text-slate-400">Base URL</Label>
-                  <Input id="url" type="url" placeholder="https://gitlab.com" value={newInstance.url} onChange={e => setNewInstance({...newInstance, url: e.target.value})} required className="bg-slate-800 border-slate-700 focus-visible:ring-indigo-500/50 h-10" />
+                  <div className="relative">
+                    <Input id="url" type="url" placeholder="https://gitlab.com" value={newInstance.url} onChange={e => setNewInstance({...newInstance, url: e.target.value})} required className="bg-slate-800 border-slate-700 focus-visible:ring-indigo-500/50 h-10 pr-10" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {urlProbe.status === 'green' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                      {urlProbe.status === 'amber' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                      {urlProbe.status === 'red' && <XCircle className="w-4 h-4 text-red-500" />}
+                    </div>
+                  </div>
+                  {urlProbe.status !== 'idle' && (
+                    <p className={`text-[10px] uppercase tracking-wide mt-1 ${urlProbe.status === 'green' ? 'text-green-400' : urlProbe.status === 'amber' ? 'text-amber-400' : 'text-red-400'}`}>
+                      {urlProbe.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="token" className="text-xs text-slate-400">Personal Access Token</Label>
-                  <Input id="token" type="password" placeholder="glpat-xxxxxxxxxxxxxxxxxxxx" value={newInstance.token} onChange={e => setNewInstance({...newInstance, token: e.target.value})} required className="bg-slate-800 border-slate-700 focus-visible:ring-indigo-500/50 h-10" />
-                  <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">Requires `api` or `read_api` scope.</p>
+                  <div className="relative">
+                    <Input id="token" type={showToken ? "text" : "password"} placeholder="glpat-xxxxxxxxxxxxxxxxxxxx" value={newInstance.token} onChange={e => setNewInstance({...newInstance, token: e.target.value})} required className="bg-slate-800 border-slate-700 focus-visible:ring-indigo-500/50 h-10 pr-10 font-mono text-sm" />
+                    <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-300" onClick={() => setShowToken(!showToken)}>
+                      {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 flex justify-between uppercase tracking-wide">
+                    <span>Must start with <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">glpat-</code></span>
+                    <span>Requires <code className="bg-slate-800 px-1 py-0.5 rounded">api</code> or <code className="bg-slate-800 px-1 py-0.5 rounded">read_api</code> scope</span>
+                  </p>
                 </div>
                 <div className="sm:col-span-2 flex justify-end mt-2">
                   <Button type="submit" disabled={isTesting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6">

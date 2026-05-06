@@ -67,10 +67,16 @@ export async function testConnection(url: string, token: string) {
   const cleanUrl = url.trim().replace(/\/$/, '');
   const cleanToken = token.trim();
   const baseUrl = cleanUrl + '/api/v4';
+  
+  if (!cleanToken.startsWith('glpat-')) {
+    throw new Error(`Token format error: Personal Access Tokens from GitLab typically start with "glpat-". It looks like you might have accidentally pasted the token NAME instead of the actual token secret.`);
+  }
+
   let response;
   try {
-    response = await fetch(`${baseUrl}/user`, {
+    response = await fetch(`${baseUrl}/projects?per_page=1`, {
       headers: {
+        'Content-Type': 'application/json',
         'PRIVATE-TOKEN': cleanToken
       }
     });
@@ -81,7 +87,7 @@ export async function testConnection(url: string, token: string) {
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error(`Unauthorized (401): The token was rejected by GitLab. 
-1. Check that you copied the whole token (e.g. glpat-...).
+1. Check that you copied the whole token (must start with glpat-...).
 2. If your server redirects HTTP to HTTPS, ensure your Base URL is 'https://' - otherwise the browser may strip the token during the redirect.
 3. Ensure the token hasn't been revoked.`);
     }
@@ -94,4 +100,32 @@ export async function testConnection(url: string, token: string) {
     throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
   return response.json();
+}
+
+export async function probeGitlabUrl(url: string): Promise<{status: 'green' | 'amber' | 'red' | 'idle', message: string}> {
+  const cleanUrl = url.trim().replace(/\/$/, '');
+  if (!cleanUrl || (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://'))) {
+    return { status: 'idle', message: '' };
+  }
+
+  try {
+    // Ping the version endpoint without auth
+    const response = await fetch(`${cleanUrl}/api/v4/version`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    // 401 means GitLab API is responding and demanding auth, which confirms it's a GitLab backend!
+    if (response.ok || response.status === 401) {
+      return { status: 'green', message: 'GitLab API is reachable at this URL' };
+    } else if (response.status === 404) {
+      return { status: 'amber', message: 'Host reachable, but /api/v4 not found' };
+    }
+    return { status: 'amber', message: `Host reachable, unexpected status: ${response.status}` };
+  } catch (err: any) {
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      return { status: 'red', message: 'Unreachable or CORS error' };
+    }
+    return { status: 'red', message: err.message };
+  }
 }
