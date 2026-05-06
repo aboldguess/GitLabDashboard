@@ -17,21 +17,33 @@ export default function Settings() {
   
   const [testError, setTestError] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [forceAddEnabled, setForceAddEnabled] = useState(false);
 
   const handleAddInstance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newInstance.name && newInstance.url && newInstance.token) {
       setIsTesting(true);
       setTestError(null);
+      setForceAddEnabled(false);
       try {
         await testConnection(newInstance.url, newInstance.token);
         addInstance(newInstance);
         setNewInstance({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
       } catch (err: any) {
         setTestError(err.message || 'Failed to connect');
+        setForceAddEnabled(true);
       } finally {
         setIsTesting(false);
       }
+    }
+  };
+
+  const handleForceAdd = () => {
+    if (newInstance.name && newInstance.url && newInstance.token) {
+      addInstance(newInstance);
+      setNewInstance({ name: 'Raspberry Pi 5 GitLab', url: 'http://gitlab.local', token: '' });
+      setTestError(null);
+      setForceAddEnabled(false);
     }
   };
 
@@ -97,9 +109,16 @@ export default function Settings() {
               </h3>
               
               {testError && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-                  <div className="text-sm text-red-300/90 whitespace-pre-wrap">{testError}</div>
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                    <div className="text-sm text-red-300/90 whitespace-pre-wrap flex-1">{testError}</div>
+                  </div>
+                  {forceAddEnabled && (
+                    <Button type="button" onClick={handleForceAdd} variant="outline" className="self-end bg-red-500/20 border-red-500/30 text-red-200 hover:bg-red-500/30 hover:text-white mt-2 font-semibold">
+                      Skip Test & Add Instance Anyway
+                    </Button>
+                  )}
                 </div>
               )}
               
