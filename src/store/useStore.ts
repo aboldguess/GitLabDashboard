@@ -44,7 +44,7 @@ export const useStore = create<AppState>()(
         set((state) => {
           const newInstance = {
             ...instance,
-            id: crypto.randomUUID(),
+            id: Math.random().toString(36).substring(2, 11) + Date.now().toString(36),
             active: state.instances.length === 0,
           };
           return { instances: [...state.instances, newInstance] };
@@ -60,7 +60,7 @@ export const useStore = create<AppState>()(
       setCurrentUser: (user) => set({ currentUser: user }),
       addUser: (name, role) =>
         set((state) => ({
-          users: [...state.users, { id: crypto.randomUUID(), name, role }],
+          users: [...state.users, { id: Math.random().toString(36).substring(2, 11) + Date.now().toString(36), name, role }],
         })),
       updateUserRole: (id, role) =>
         set((state) => ({
