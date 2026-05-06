@@ -52,11 +52,11 @@ export default function Help() {
             <p>To access your projects, issues, and statistics, the dashboard requires a <strong>Personal Access Token</strong>.</p>
             <ol className="list-decimal pl-5 space-y-2 marker:text-slate-600">
               <li>Log in to your local GitLab instance.</li>
-              <li>Navigate to your User Settings &gt; Access Tokens.</li>
+              <li>Navigate to your User Settings &gt; Access Tokens (eg http://gitlab.local/-/user_settings/personal_access_tokens).</li>
               <li>Click "Add new token".</li>
               <li>Give it a descriptive name (e.g., <code className="text-slate-300">Dashboard Token</code>).</li>
               <li>Set an expiration date (or leave it blank).</li>
-              <li>Select the <code className="text-indigo-400 font-bold bg-indigo-500/10 px-1 py-0.5 rounded">api</code> or <code className="text-indigo-400 font-bold bg-indigo-500/10 px-1 py-0.5 rounded">read_api</code> scope.</li>
+              <li>Select the <code className="text-indigo-400 font-bold bg-indigo-500/10 px-1 py-0.5 rounded">api</code> or <code className="text-indigo-400 font-bold bg-indigo-500/10 px-1 py-0.5 rounded">read_api</code> scope. CONLSULT ADAM ABOUT ACCESS LEVELS.</li>
               <li>Click Create and copy the generated token immediately.</li>
             </ol>
             
