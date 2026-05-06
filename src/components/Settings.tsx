@@ -147,7 +147,7 @@ export default function Settings() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 flex justify-between uppercase tracking-wide">
-                    <span>Must start with <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">glpat-</code></span>
+                    <span>Prefix like <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">glpat-</code> or <code className="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">glft-</code></span>
                     <span>Requires <code className="bg-slate-800 px-1 py-0.5 rounded">api</code> or <code className="bg-slate-800 px-1 py-0.5 rounded">read_api</code> scope</span>
                   </p>
                 </div>

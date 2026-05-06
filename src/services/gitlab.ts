@@ -68,8 +68,8 @@ export async function testConnection(url: string, token: string) {
   const cleanToken = token.trim();
   const baseUrl = cleanUrl + '/api/v4';
   
-  if (!cleanToken.startsWith('glpat-')) {
-    throw new Error(`Token format error: Personal Access Tokens from GitLab typically start with "glpat-". It looks like you might have accidentally pasted the token NAME instead of the actual token secret.`);
+  if (!cleanToken.match(/^gl[a-zA-Z0-9_]+-/)) {
+    throw new Error(`Token format error: Tokens from GitLab typically start with a prefix like "glpat-" or "glft-". It looks like you might have accidentally pasted the token NAME instead of the actual token secret.`);
   }
 
   let response;
@@ -87,7 +87,7 @@ export async function testConnection(url: string, token: string) {
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error(`Unauthorized (401): The token was rejected by GitLab. 
-1. Check that you copied the whole token (must start with glpat-...).
+1. Check that you copied the whole token (e.g. glpat-... or glft-...).
 2. If your server redirects HTTP to HTTPS, ensure your Base URL is 'https://' - otherwise the browser may strip the token during the redirect.
 3. Ensure the token hasn't been revoked.`);
     }
